@@ -7,8 +7,9 @@ last_ip = None
 
 # Function to retrieve the current public IP
 def get_current_ip():
-    response = requests.get("https://api64.ipify.org?format=text")
-    return response.text.strip()
+    response = requests.get("https://ipinfo.io")
+    data = response.json()
+    return data.get("ip")
 
 # Update DNS record using curl
 def update_dns_record(new_ip):
