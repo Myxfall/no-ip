@@ -1,5 +1,6 @@
 import requests
 import datetime
+import time
 
 # Initialize last known public IP
 last_ip = None
@@ -29,7 +30,7 @@ while True:
 
     # Print Timestamp action
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"{current_time})
+    print(f"{current_time}")
 
     # Compare current IP with the last known IP
     if last_ip is None:
