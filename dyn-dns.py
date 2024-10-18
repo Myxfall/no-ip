@@ -1,18 +1,36 @@
 import requests
 import datetime
 import time
+import os
 
-# Initialize last known public IP
-last_ip = None
+# File to store the previous IP address
+IP_FILE = 'previous_ip.txt'
 
-# Function to retrieve the current public IP
 def get_current_ip():
-    response = requests.get("https://ipinfo.io")
-    data = response.json()
-    return data.get("ip")
+    """Retrieve the current public IP."""
+    try:
+        response = requests.get("https://ipinfo.io")
+        response.raise_for_status()
+        data = response.json()
+        return data.get("ip")
+    except requests.RequestException as e:
+        print(f"Error retrieving current IP: {e}")
+        return None
 
-# Update DNS record using curl
+def get_previous_ip():
+    """Read the previous IP address from the file."""
+    if os.path.exists(IP_FILE):
+        with open(IP_FILE, 'r') as file:
+            return file.read().strip()
+    return None
+
+def save_current_ip(ip):
+    """Save the current IP address to the file."""
+    with open(IP_FILE, 'w') as file:
+        file.write(ip)
+
 def update_dns_record(new_ip):
+    """Update DNS record using curl."""
     username = "your_username"
     password = "your_password"
     hostname = "mytest.example.com"
@@ -28,28 +46,38 @@ def update_dns_record(new_ip):
 while True:
     # Get the current public IP
     current_ip = get_current_ip()
+    
+    if current_ip is None:
+        print("Could not retrieve current IP. Skipping this iteration.")
+        time.sleep(3600)
+        continue
 
-    # Print Timestamp action
+    # Print timestamp
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"{current_time}")
+    
+    # Get the previous IP from the file
+    previous_ip = get_previous_ip()
 
-    # Compare current IP with the last known IP
-    if last_ip is None:
-        last_ip = current_ip
-        print("Initial IP:", last_ip)
+    # Compare current IP with the previous IP
+    if previous_ip is None:
+        print("No previous IP found. This is the first run or the file was deleted.")
+        print("Current IP:", current_ip)
+        save_current_ip(current_ip)
     else:
-        if current_ip != last_ip:
+        if current_ip != previous_ip:
             print("IP has changed!")
-            print("Previous IP:", last_ip)
+            print("Previous IP:", previous_ip)
             print("Current IP:", current_ip)
             
             # Update DNS record
             response = update_dns_record(current_ip)
             print("DNS Update Response:", response)
             
-            last_ip = current_ip
+            # Save the new IP
+            save_current_ip(current_ip)
         else:
             print("IP has not changed.")
-
+    
     # Sleep for 60 minutes
     time.sleep(3600)
